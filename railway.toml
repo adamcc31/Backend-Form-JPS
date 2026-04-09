@@ -1,11 +1,7 @@
 [build]
-builder = "nixpacks"
-buildCommand = "npm install && npx prisma generate && npm run build"
-
-[deploy]
-startCommand = "npx prisma db push --accept-data-loss && npx prisma db seed && node dist/src/main"
+builder = "docker"
+dockerfilePath = "Dockerfile"
 
 [env]
 NODE_ENV = "production"
 PORT = "4000"
-NIXPACKS_NODE_VERSION = "24"
