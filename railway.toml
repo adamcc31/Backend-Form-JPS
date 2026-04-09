@@ -8,4 +8,4 @@ startCommand = "npx prisma db push --accept-data-loss && npx prisma db seed && n
 [env]
 NODE_ENV = "production"
 PORT = "4000"
-NIXPACKS_NODE_VERSION = "22.14.0"
+NIXPACKS_NODE_VERSION = "24"
