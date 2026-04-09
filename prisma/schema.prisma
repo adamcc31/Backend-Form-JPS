@@ -32,7 +32,7 @@ enum DocumentType {
 model Organization {
   id              String        @id @default(uuid())
   name            String
-  slug            String        @unique @default(uuid()) // Slug untuk URL form publik, e.g. "lpk-sakura"
+  slug            String        @unique // Slug untuk URL form publik, e.g. "lpk-sakura"
   branding_config Json          @default("{}") // JSONB: logo, warna, dsb.
   is_active       Boolean       @default(true)
   created_at      DateTime      @default(now())
@@ -64,7 +64,7 @@ model DynamicForm {
   id              String         @id @default(uuid())
   organization_id String
   organization    Organization   @relation(fields: [organization_id], references: [id])
-  title           String         @default("Untitled Form") // Judul form
+  title           String         // Judul form
   schema_config   Json           // JSONB: { version, fields: [...] }
   header_config   Json           @default("{}") // JSONB: banner, logo, headline, theme
   document_config Json           @default("{}") // JSONB: konfigurasi dokumen wajib upload

@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "prebuild": "npx prisma db push --force-reset --accept-data-loss && npx prisma db seed",
     "build": "nest build",
     "start": "node dist/src/main",
     "start:dev": "nest start --watch",
