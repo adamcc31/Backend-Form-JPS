@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { FormsService } from './forms.service';
-import { FormsController } from './forms.controller';
+import { FormsPublicController, FormsAdminController } from './forms.controller';
 
 @Module({
   providers: [FormsService],
-  controllers: [FormsController]
+  controllers: [FormsPublicController, FormsAdminController],
+  exports: [FormsService],
 })
 export class FormsModule {}

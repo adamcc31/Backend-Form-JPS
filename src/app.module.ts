@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { FormsModule } from './forms/forms.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { RegistrationsModule } from './registrations/registrations.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RegistrationsModule } from './registrations/registrations.module';
     FormsModule,
     OrganizationsModule,
     RegistrationsModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],

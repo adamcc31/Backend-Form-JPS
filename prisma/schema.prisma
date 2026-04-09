@@ -22,15 +22,24 @@ enum RegistrationStatus {
   PROCESSED
 }
 
+enum DocumentType {
+  KTP
+  PASSPORT
+  ZAIRYU_CARD
+  OTHER
+}
+
 model Organization {
-  id           String        @id @default(uuid())
-  name         String
-  is_active    Boolean       @default(true)
-  created_at   DateTime      @default(now())
-  updated_at   DateTime      @updatedAt
-  users        User[]
-  dynamic_forms DynamicForm[]
-  registrations Registration[]
+  id              String        @id @default(uuid())
+  name            String
+  slug            String        @unique // Slug untuk URL form publik, e.g. "lpk-sakura"
+  branding_config Json          @default("{}") // JSONB: logo, warna, dsb.
+  is_active       Boolean       @default(true)
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  users           User[]
+  dynamic_forms   DynamicForm[]
+  registrations   Registration[]
 
   @@map("organizations")
 }
@@ -52,30 +61,61 @@ model User {
 }
 
 model DynamicForm {
-  id              String       @id @default(uuid())
+  id              String         @id @default(uuid())
   organization_id String
-  organization    Organization @relation(fields: [organization_id], references: [id])
-  schema_config   Json         // JSONB: { fields: [...] }
-  is_active       Boolean      @default(true)
-  created_at      DateTime     @default(now())
-  updated_at      DateTime     @updatedAt
+  organization    Organization   @relation(fields: [organization_id], references: [id])
+  title           String         // Judul form
+  schema_config   Json           // JSONB: { version, fields: [...] }
+  header_config   Json           @default("{}") // JSONB: banner, logo, headline, theme
+  document_config Json           @default("{}") // JSONB: konfigurasi dokumen wajib upload
+  is_active       Boolean        @default(true)
+  published_at    DateTime?      // Waktu form dipublikasikan
+  expires_at      DateTime?      // Waktu form kadaluarsa (opsional)
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+  registrations   Registration[]
 
   @@map("dynamic_forms")
 }
 
 model Registration {
-  id              String             @id @default(uuid())
-  organization_id String
-  organization    Organization       @relation(fields: [organization_id], references: [id])
-  passport_number String
-  dynamic_data    Json               @default("{}") // JSONB: responses
-  status          RegistrationStatus @default(DRAFT)
+  id                String             @id @default(uuid())
+  tracking_code     String             @unique // Kode unik 12-char untuk cek status publik
+  organization_id   String
+  organization      Organization       @relation(fields: [organization_id], references: [id])
+  dynamic_form_id   String
+  dynamic_form      DynamicForm        @relation(fields: [dynamic_form_id], references: [id])
+  passport_number   String
+  full_name         String
+  dynamic_data      Json               @default("{}") // JSONB: responses dari dynamic form
+  documents         Json               @default("{}") // JSONB: metadata file dokumen
+  status            RegistrationStatus @default(DRAFT)
   assigned_agent_id String?
-  assigned_agent  User?              @relation("AssignedAgent", fields: [assigned_agent_id], references: [id])
-  created_at      DateTime           @default(now())
-  updated_at      DateTime           @updatedAt
+  assigned_agent    User?              @relation("AssignedAgent", fields: [assigned_agent_id], references: [id])
+  notes             String?            // Catatan internal (tidak visible ke siswa)
+  submitted_at      DateTime?          // Waktu submit oleh siswa
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+  document_files    DocumentFile[]
 
   @@map("registrations")
+}
+
+model DocumentFile {
+  id                    String       @id @default(uuid())
+  registration_id       String
+  registration          Registration @relation(fields: [registration_id], references: [id])
+  document_type         DocumentType
+  storage_key           String       // Path file di storage (terenkripsi)
+  original_filename     String
+  file_size_bytes       Int
+  mime_type             String       // image/jpeg atau image/png
+  enhancement_metadata  Json         @default("{}") // Log proses enhancement
+  ocr_data              Json         @default("{}") // Hasil OCR jika diaktifkan
+  uploaded_at           DateTime     @default(now())
+  expires_at            DateTime?    // Auto-delete setelah retention period
+
+  @@map("document_files")
 }
 
 model AuditLog {
@@ -86,7 +126,8 @@ model AuditLog {
   old_data    Json?
   new_data    Json?
   changed_by  String?  // User ID or system
-  created_at  DateTime @default(now())
+  changed_at  DateTime @default(now())
+  ip_address  String?  // IP address client
 
   @@map("audit_logs")
 }

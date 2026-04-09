@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
-import { OrganizationsController } from './organizations.controller';
+import { OrganizationsController, SuperAdminController } from './organizations.controller';
 
 @Module({
   providers: [OrganizationsService],
-  controllers: [OrganizationsController]
+  controllers: [OrganizationsController, SuperAdminController],
+  exports: [OrganizationsService],
 })
 export class OrganizationsModule {}

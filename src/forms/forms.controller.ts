@@ -8,33 +8,58 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { GetUser } from '../common/decorators/get-user.decorator';
 
+// ============================================
+// PUBLIC ENDPOINTS — TRD §9.2
+// ============================================
+
 @Controller('forms')
-export class FormsController {
+export class FormsPublicController {
   constructor(private readonly formsService: FormsService) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  // GET /api/v1/forms/public/:org_slug — TRD §9.2
+  @Get('public/:org_slug')
+  async getPublicForm(@Param('org_slug') orgSlug: string) {
+    return this.formsService.findActiveByOrgSlug(orgSlug);
+  }
+}
+
+// ============================================
+// ADMIN ENDPOINTS — TRD §9.3
+// ============================================
+
+@Controller('admin/forms')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class FormsAdminController {
+  constructor(private readonly formsService: FormsService) {}
+
+  // GET /api/v1/admin/forms — TRD §9.3
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Get()
+  findAll(@GetUser() user: any, @Query('organization_id') organizationId?: string) {
+    if (user.role === Role.ADMIN) {
+      return this.formsService.findAll(user.organization_id);
+    }
+    return this.formsService.findAll(organizationId);
+  }
+
+  // GET /api/v1/admin/forms/:id
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.AGENT)
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.formsService.findOne(id);
+  }
+
+  // POST /api/v1/admin/forms — TRD §9.3
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @Post()
   create(@Body() createFormDto: CreateFormDto, @GetUser() user: any) {
-    // If ADMIN, force organization_id to their own
     if (user.role === Role.ADMIN) {
       createFormDto.organization_id = user.organization_id;
     }
     return this.formsService.create(createFormDto);
   }
 
-  @Get()
-  findAll(@Query('organization_id') organizationId?: string) {
-    // Public endpoint to get forms, usually filtered by organization
-    return this.formsService.findAll(organizationId);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.formsService.findOne(id);
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  // PATCH /api/v1/admin/forms/:id — TRD §9.3
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateFormDto: UpdateFormDto, @GetUser() user: any) {
@@ -48,7 +73,7 @@ export class FormsController {
     return this.formsService.update(id, updateFormDto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  // DELETE /api/v1/admin/forms/:id (soft delete)
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @Delete(':id')
   async remove(@Param('id') id: string, @GetUser() user: any) {

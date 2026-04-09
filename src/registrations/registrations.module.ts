@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { RegistrationsService } from './registrations.service';
-import { RegistrationsController } from './registrations.controller';
+import { RegistrationsPublicController, RegistrationsAdminController } from './registrations.controller';
+import { StorageService } from './storage.service';
 
 @Module({
-  providers: [RegistrationsService],
-  controllers: [RegistrationsController]
+  providers: [RegistrationsService, StorageService],
+  controllers: [RegistrationsPublicController, RegistrationsAdminController],
+  exports: [RegistrationsService],
 })
 export class RegistrationsModule {}
