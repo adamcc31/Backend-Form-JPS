@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  AGENT
+}
+
+enum RegistrationStatus {
+  DRAFT
+  PENDING
+  REVIEW_IN_PROGRESS
+  REVISION_REQUIRED
+  APPROVED
+  PROCESSED
+}
+
+model Organization {
+  id           String        @id @default(uuid())
+  name         String
+  is_active    Boolean       @default(true)
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+  users        User[]
+  dynamic_forms DynamicForm[]
+  registrations Registration[]
+
+  @@map("organizations")
+}
+
+model User {
+  id              String       @id @default(uuid())
+  email           String       @unique
+  password        String
+  name            String
+  role            Role
+  organization_id String?
+  organization    Organization? @relation(fields: [organization_id], references: [id])
+  is_active       Boolean      @default(true)
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  assigned_registrations Registration[] @relation("AssignedAgent")
+
+  @@map("users")
+}
+
+model DynamicForm {
+  id              String       @id @default(uuid())
+  organization_id String
+  organization    Organization @relation(fields: [organization_id], references: [id])
+  schema_config   Json         // JSONB: { fields: [...] }
+  is_active       Boolean      @default(true)
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  @@map("dynamic_forms")
+}
+
+model Registration {
+  id              String             @id @default(uuid())
+  organization_id String
+  organization    Organization       @relation(fields: [organization_id], references: [id])
+  passport_number String
+  dynamic_data    Json               @default("{}") // JSONB: responses
+  status          RegistrationStatus @default(DRAFT)
+  assigned_agent_id String?
+  assigned_agent  User?              @relation("AssignedAgent", fields: [assigned_agent_id], references: [id])
+  created_at      DateTime           @default(now())
+  updated_at      DateTime           @updatedAt
+
+  @@map("registrations")
+}
+
+model AuditLog {
+  id          BigInt   @id @default(autoincrement())
+  table_name  String
+  record_id   String
+  action      String   // INSERT, UPDATE, DELETE
+  old_data    Json?
+  new_data    Json?
+  changed_by  String?  // User ID or system
+  created_at  DateTime @default(now())
+
+  @@map("audit_logs")
+}
